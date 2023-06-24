@@ -3,8 +3,9 @@ Repository for playing with picamera2 and flask
 
 ## TODO
 
-* Better user experience
-* User selected screenshot
+* Better user experience of landing page
+* User selected screenshot (https://github.com/raspberrypi/picamera2/issues/608).
+  * List gallery of screenshots
 * Env-based login
 
 ## Links
