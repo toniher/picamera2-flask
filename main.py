@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python
 
 import picamera2 #camera module for RPi camera
 from picamera2 import Picamera2
@@ -6,6 +6,7 @@ from picamera2.encoders import JpegEncoder
 from picamera2.outputs import FileOutput
 from libcamera import Transform
 import io
+from threading import Condition
 
 from flask import Flask, render_template, Response, request, send_from_directory
 
@@ -39,14 +40,18 @@ def genFrames():
 
 
 # App Globals (do not edit)
-app = Flask(__name__)
+app = Flask(__name__, template_folder='templates')
 
 @app.route('/')
 def index():
-    return render_template('index.html') #you can customze index.html here
+    return render_template('index.html') # you can customze index.html here
 
 #defines the route that will access the video feed and call the feed function
 @app.route('/video_feed')
 def video_feed():
     return Response(genFrames(),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
+
+if __name__ == '__main__':
+
+    app.run(host='0.0.0.0', port=8000, debug=True)
