@@ -8,7 +8,7 @@ from libcamera import Transform
 import io
 from threading import Condition
 
-from flask import Flask, render_template, Response
+from flask import Flask, redirect, render_template, Response
 
 # Code from: https://github.com/raspberrypi/picamera2/issues/366
 # Code from: https://github.com/EbenKouao/pi-camera-stream-flask
@@ -44,6 +44,11 @@ def genFrames():
 
 # App Globals (do not edit)
 app = Flask(__name__, template_folder='templates')
+
+
+@app.route('/index.html')
+def indexhtml():
+    return redirect('/')
 
 
 @app.route('/')
