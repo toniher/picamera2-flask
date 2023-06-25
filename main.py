@@ -33,18 +33,20 @@ class StreamingOutput(io.BufferedIOBase):
 def captureImage():
     status = "failed"
     with picamera2.Picamera2() as camera:
-        camera.configure(camera.create_still_configuration(main={
-            "size": (640, 480)}, transform=Transform(180)))
+        camera_config = camera.create_still_configuration(main={
+            "size": (640, 480)}, transform=Transform(180))
         filename = time.strftime("%Y%m%d-%H%M%S") + '.jpg'
         savepath = os.path.join(dirpath, filename)
-        out = camera.capture_file(savepath, format='jpg', wait=False)
-        status = out
+        camera.start()
+        camera.switch_mode_and_capture_file(camera_config, savepath)
+        status = "success"
     return {'status': status}
 
 
 # defines the function that generates our frames
 def genFrames():
     # buffer = StreamingOutput()
+    # TODO: Share camera object
     with picamera2.Picamera2() as camera:
         output = StreamingOutput()
         camera.configure(camera.create_video_configuration(main={
