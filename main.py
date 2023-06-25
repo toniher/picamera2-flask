@@ -7,11 +7,16 @@ from picamera2.outputs import FileOutput
 from libcamera import Transform
 import io
 from threading import Condition
+import time
+import os
 
-from flask import Flask, redirect, render_template, Response
+from flask import Flask, jsonify, redirect, render_template, Response
 
 # Code from: https://github.com/raspberrypi/picamera2/issues/366
 # Code from: https://github.com/EbenKouao/pi-camera-stream-flask
+
+# Dir path where to save
+dirpath = "/tmp"
 
 
 class StreamingOutput(io.BufferedIOBase):
@@ -23,6 +28,16 @@ class StreamingOutput(io.BufferedIOBase):
         with self.condition:
             self.frame = buf
             self.condition.notify_all()
+
+
+def captureImage():
+    with picamera2.Picamera2() as camera:
+        camera.configure(camera.create_still_configuration(main={
+            "size": (640, 480)}, transform=Transform(180)))
+        filename = time.strftime("%Y%m%d-%H%M%S") + '.png'
+        savepath = os.path.join(dirpath, filename)
+        camera.capture_file(savepath, format='jpg', wait=False)
+    return {'status': 'success'}
 
 
 # defines the function that generates our frames
@@ -55,9 +70,14 @@ def indexhtml():
 def index():
     return render_template('index.html')  # you can customze index.html here
 
+
+@app.route('/capture')
+def capture():
+    outcome = captureImage()
+    return jsonify(outcome)
+
+
 # defines the route that will access the video feed and call the feed function
-
-
 @app.route('/video_feed')
 def video_feed():
     return Response(genFrames(),
