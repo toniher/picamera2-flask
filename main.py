@@ -32,30 +32,32 @@ class StreamingOutput(io.BufferedIOBase):
 
 def captureImage():
     status = "failed"
-    camera_config = app.camera.create_still_configuration(main={
+    with picamera2.Picamera2() as camera:
+        camera_config = camera.create_still_configuration(main={
             "size": (640, 480)}, transform=Transform(180))
-    filename = time.strftime("%Y%m%d-%H%M%S") + '.jpg'
-    savepath = os.path.join(dirpath, filename)
-    app.camera.start()
-    app.camera.switch_mode_and_capture_file(camera_config, savepath)
-    status = "success"
+        filename = time.strftime("%Y%m%d-%H%M%S") + '.jpg'
+        savepath = os.path.join(dirpath, filename)
+        camera.start()
+        camera.switch_mode_and_capture_file(camera_config, savepath)
+        status = "success"
     return {'status': status}
 
 
 # defines the function that generates our frames
 def genFrames():
     # buffer = StreamingOutput()
-    output = StreamingOutput()
-    app.camera.configure(app.camera.create_video_configuration(main={
-        "size": (640, 480)}, transform=Transform(180)))
-    output = StreamingOutput()
-    app.amera.start_recording(JpegEncoder(), FileOutput(output))
-    while True:
-        with output.condition:
-            output.condition.wait()
-            frame = output.frame
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+    with picamera2.Picamera2() as camera:
+        output = StreamingOutput()
+        camera.configure(camera.create_video_configuration(main={
+            "size": (640, 480)}, transform=Transform(180)))
+        output = StreamingOutput()
+        camera.start_recording(JpegEncoder(), FileOutput(output))
+        while True:
+            with output.condition:
+                output.condition.wait()
+                frame = output.frame
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
 
 # App Globals (do not edit)
@@ -86,5 +88,4 @@ def video_feed():
 
 
 if __name__ == '__main__':
-    app.camera = picamera2.Picamera2()
     app.run(host='0.0.0.0', port=8000, debug=True)
