@@ -38,8 +38,7 @@ def captureImage():
         filename = time.strftime("%Y%m%d-%H%M%S") + '.jpg'
         savepath = os.path.join(dirpath, filename)
         out = camera.capture_file(savepath, format='jpg', wait=False)
-        print(out)
-        status = "success"
+        status = out
     return {'status': status}
 
 
