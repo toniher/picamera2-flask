@@ -121,9 +121,10 @@ def capture():
 # defines the route that will access the video feed and call the feed function
 @app.route('/video_feed')
 def video_feed():
-    camera = get_camera()
-    print(camera)
-    if camera is None:
+    global camera
+    status = get_camera()
+    print(status)
+    if status is None:
         camera = open_camera()
     return Response(genFrames(camera),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
