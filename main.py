@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import picamera2  # camera module for RPi camera
 from picamera2 import Picamera2
 from picamera2.encoders import JpegEncoder
 from picamera2.outputs import FileOutput
@@ -30,38 +29,76 @@ class StreamingOutput(io.BufferedIOBase):
             self.condition.notify_all()
 
 
-def captureImage():
-    status = "failed"
-    with picamera2.Picamera2() as camera:
-        camera_config = camera.create_still_configuration(main={
-            "size": (640, 480)}, transform=Transform(180))
-        filename = time.strftime("%Y%m%d-%H%M%S") + '.jpg'
-        savepath = os.path.join(dirpath, filename)
-        camera.start()
-        camera.switch_mode_and_capture_file(camera_config, savepath)
-        status = "success"
-    return {'status': status}
+class Camera:
+
+    def __init__(self):
+        self.interface = Picamera2()
+        self.is_stopped = False
+
+    def stop(self):
+        if self.interface.encoder is not None:
+            self.interface.stop_encoder()
+        self.interface.close()
+        self.is_stopped = True
+
+    def captureImage(self):
+        status = "failed"
+        try:
+            camera_config = self.interface.create_still_configuration(main={
+                    "size": (640, 480)}, transform=Transform(180))
+            filename = time.strftime("%Y%m%d-%H%M%S") + '.jpg'
+            savepath = os.path.join(dirpath, filename)
+            self.interface.start()
+            self.interface.switch_mode_and_capture_file(camera_config, savepath)
+            status = "success"
+        finally:
+            self.interface.stop()
+            self.interface.close()
+        return {'status': status}
 
 
-# defines the function that generates our frames
-def genFrames():
+# App Globals (do not edit)
+app = Flask(__name__, template_folder='templates')
+camera = None
+
+
+def open_camera():
+    camera = Camera()
+    return camera
+
+
+def close_camera():
+    global camera
+    if camera is not None:
+        camera.stop()
+        print(camera)
+        camera = None
+        print(camera)
+    return camera
+
+
+def get_camera():
+    return camera
+
+
+def genFrames(camera):
     # buffer = StreamingOutput()
-    with picamera2.Picamera2() as camera:
-        output = StreamingOutput()
-        camera.configure(camera.create_video_configuration(main={
-            "size": (640, 480)}, transform=Transform(180)))
-        output = StreamingOutput()
-        camera.start_recording(JpegEncoder(), FileOutput(output))
-        while True:
+    output = StreamingOutput()
+    video_config = camera.interface.create_video_configuration(main={
+                "size": (640, 480)}, transform=Transform(180))
+    camera.interface.configure(video_config)
+    output = StreamingOutput()
+    camera.interface.start_recording(JpegEncoder(), FileOutput(output))
+    while True:
+        stopped = camera.is_stopped
+        if stopped:
+            break
+        else:
             with output.condition:
                 output.condition.wait()
                 frame = output.frame
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-
-
-# App Globals (do not edit)
-app = Flask(__name__, template_folder='templates')
 
 
 @app.route('/index.html')
@@ -76,15 +113,43 @@ def index():
 
 @app.route('/capture')
 def capture():
-    outcome = captureImage()
+    camera = get_camera()
+    outcome = camera.captureImage()
     return jsonify(outcome)
 
 
 # defines the route that will access the video feed and call the feed function
 @app.route('/video_feed')
 def video_feed():
-    return Response(genFrames(),
+    camera = get_camera()
+    print(camera)
+    if camera is None:
+        camera = open_camera()
+    return Response(genFrames(camera),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
+
+
+@app.route('/stop')
+def stop():
+    global camera
+    status = get_camera()
+    if status is not None:
+        camera = close_camera()
+    print(camera)
+    outcome = {'status': 'stopped'}
+    return jsonify(outcome)
+
+
+@app.route('/start')
+def start():
+    status = get_camera()
+    print(status)
+    if status is None:
+        print("Open Camera")
+        global camera
+        camera = open_camera()
+    outcome = {'status': 'started'}
+    return jsonify(outcome)
 
 
 if __name__ == '__main__':

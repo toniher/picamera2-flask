@@ -1,4 +1,7 @@
 # picamera2-flask
+
+**CURRENTLY NOT FULLY WORKING**
+
 Repository for playing with picamera2 and flask
 
 ## TODO
