@@ -41,21 +41,6 @@ class Camera:
         self.interface.close()
         self.is_stopped = True
 
-    def captureImage(self):
-        status = "failed"
-        try:
-            camera_config = self.interface.create_still_configuration(main={
-                    "size": (640, 480)}, transform=Transform(180))
-            filename = time.strftime("%Y%m%d-%H%M%S") + '.jpg'
-            savepath = os.path.join(dirpath, filename)
-            self.interface.start()
-            self.interface.switch_mode_and_capture_file(camera_config, savepath)
-            status = "success"
-        finally:
-            self.interface.stop()
-            self.interface.close()
-        return {'status': status}
-
 
 # App Globals (do not edit)
 app = Flask(__name__, template_folder='templates')
@@ -92,6 +77,7 @@ def genFrames(camera):
     while True:
         stopped = camera.is_stopped
         if stopped:
+            camera.interface.stop_recording()
             break
         else:
             with output.condition:
@@ -99,6 +85,23 @@ def genFrames(camera):
                 frame = output.frame
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+
+def captureImage(camera):
+    status = "failed"
+    try:
+        camera_config = camera.interface.create_still_configuration(main={
+                "size": (640, 480)}, transform=Transform(180))
+        filename = time.strftime("%Y%m%d-%H%M%S") + '.jpg'
+        savepath = os.path.join(dirpath, filename)
+        camera.interface.start()
+        camera.interface.switch_mode_and_capture_file(camera_config, savepath)
+        status = "success"
+    finally:
+        close_camera()
+        # camera.interface.stop()
+        # camera.interface.close()
+    return {'status': status}
 
 
 @app.route('/index.html')
@@ -113,8 +116,15 @@ def index():
 
 @app.route('/capture')
 def capture():
-    camera = get_camera()
-    outcome = camera.captureImage()
+    global camera
+    status = get_camera()
+    print(status)
+    if status is None:
+        camera = open_camera()
+    else:
+        camera = close_camera()
+        camera = open_camera()
+    outcome = captureImage(camera)
     return jsonify(outcome)
 
 
