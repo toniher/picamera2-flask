@@ -9,12 +9,14 @@ from threading import Condition
 import time
 import os
 
-from flask import Flask, jsonify, redirect, render_template, Response
+from flask import Flask, jsonify, redirect, render_template, request, Response, url_for
 
-# TODO: To check https://stackoverflow.com/questions/37275262/anonym-password-protect-pages-without-username-with-flask
-# from flask_login import LoginManager, UserMixin
-# from flask_wtf import FlaskForm
-# from werkzeug.urls import url_parse
+# Based on https://stackoverflow.com/questions/37275262/anonym-password-protect-pages-without-username-with-flask
+import flask_login
+from flask_login import LoginManager, UserMixin
+from flask_login import current_user, login_required
+from flask_wtf import FlaskForm
+from werkzeug.urls import url_parse
 #
 # Code from: https://github.com/raspberrypi/picamera2/issues/366
 # Code from: https://github.com/EbenKouao/pi-camera-stream-flask
@@ -47,31 +49,24 @@ class Camera:
         self.is_stopped = True
 
 
-# class User(UserMixin):
-#     def __init__(self, name, password):
-#         self.name = name
-#         self.password = password
-#
-#     def check_password(self, password):
-#         if password == self.password:
-#             return True
-#         return False
-#
-#     def __repr__(self):
-#         return '<User>'.format(self.name)
-#
-#
-# class LoginForm(FlaskForm):
-#     password = PasswordField('Password', validators=[DataRequired()])
-#     remember_me = BooleanField('Submit')
-#     submit = SubmitField('Login')
-#
+class User(UserMixin):
+    pass
+
+class LoginForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[DataRequired()])
+    remember_me = BooleanField('Submit')
+    submit = SubmitField('Login')
+
 
 # App Globals
 app = Flask(__name__, template_folder='templates')
 app.config['SECRET_KEY'] = 'secret_key_for_flask'
-# login_manager = LoginManager(app)
 
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+users = {'user1':{'pw':'pass1'}}
 camera = None
 
 
@@ -193,28 +188,54 @@ def start():
     outcome = {'status': 'started'}
     return jsonify(outcome)
 
+@login_manager.user_loader
+def user_loader(username):
+  if username not in users:
+    return
 
-# @app.route('/login', methods=['GET', 'POST'])
-# def login():
-#     if current_user.is_authenticated:
-#         return redirect(url_for('index'))
-#     form = LoginForm()
-#     if form.validate_on_submit():
-#         user = User()
-#         if user is not None and user.check_password(form.password.data):
-#             login_user(user, remember=form.remember_me.data)
-#             next_page = request.args.get('next')
-#             if not next_page or url_parse(next_page).netloc != '':
-#                 next_page = url_for('index')
-#             return redirect(next_page)
-#     return render_template('login_form.html', form=form)
-#
-#
-# @app.route('/logout')
-# def logout():
-#     logout_user()
-#     return redirect(url_for('index'))
-#
-#
+  user = User()
+  user.id = username
+  return user
+
+@login_manager.request_loader
+def request_loader(request):
+  username = request.form.get('username')
+  if username not in users:
+    return
+
+  user = User()
+  user.id = username
+
+  user.is_authenticated = request.form['pw'] == users[username]['pw']
+
+  return user
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    form = LoginForm()
+    if form.validate_on_submit():
+        username = form.username.data
+        if username not in users:
+            return
+        if users[username]['pw'] == form.password.data:
+            user = User()
+            user.id = username
+            flask_login.login_user(user, remember=form.remember_me.data)
+            next_page = request.args.get('next')
+            if not next_page or url_parse(next_page).netloc != '':
+                next_page = url_for('index')
+            return redirect(next_page)
+    return render_template('login_form.html', form=form)
+
+
+@app.route('/logout')
+def logout():
+    flask_login.logout_user()
+    return redirect(url_for('index'))
+
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000, debug=True)
