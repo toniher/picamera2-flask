@@ -10,6 +10,8 @@ import time
 import os
 
 from flask import Flask, jsonify, redirect, render_template, Response
+
+# TODO: To check https://stackoverflow.com/questions/37275262/anonym-password-protect-pages-without-username-with-flask
 # from flask_login import LoginManager, UserMixin
 # from flask_wtf import FlaskForm
 # from werkzeug.urls import url_parse
