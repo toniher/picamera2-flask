@@ -10,10 +10,10 @@ import time
 import os
 
 from flask import Flask, jsonify, redirect, render_template, Response
-from flask_login import LoginManager, UserMixin
-from flask_wtf import FlaskForm
-from werkzeug.urls import url_parse
-
+# from flask_login import LoginManager, UserMixin
+# from flask_wtf import FlaskForm
+# from werkzeug.urls import url_parse
+#
 # Code from: https://github.com/raspberrypi/picamera2/issues/366
 # Code from: https://github.com/EbenKouao/pi-camera-stream-flask
 
@@ -45,30 +45,30 @@ class Camera:
         self.is_stopped = True
 
 
-class User(UserMixin):
-    def __init__(self, name, password):
-        self.name = name
-        self.password = password
-
-    def check_password(self, password):
-        if password == self.password:
-            return True
-        return False
-
-    def __repr__(self):
-        return '<User>'.format(self.name)
-
-
-    class LoginForm(FlaskForm):
-        password = PasswordField('Password', validators=[DataRequired()])
-        remember_me = BooleanField('Submit')
-        submit = SubmitField('Login')
-
+# class User(UserMixin):
+#     def __init__(self, name, password):
+#         self.name = name
+#         self.password = password
+#
+#     def check_password(self, password):
+#         if password == self.password:
+#             return True
+#         return False
+#
+#     def __repr__(self):
+#         return '<User>'.format(self.name)
+#
+#
+# class LoginForm(FlaskForm):
+#     password = PasswordField('Password', validators=[DataRequired()])
+#     remember_me = BooleanField('Submit')
+#     submit = SubmitField('Login')
+#
 
 # App Globals
 app = Flask(__name__, template_folder='templates')
-app.config['SECRET_KEY'] = '7110c8ae51a4b5af97be6534caef90e4bb9bdcb3380af008f90b23a5d1616bf319bc298105da20fe'
-login_manager = LoginManager(app)
+app.config['SECRET_KEY'] = 'secret_key_for_flask'
+# login_manager = LoginManager(app)
 
 camera = None
 
@@ -192,27 +192,27 @@ def start():
     return jsonify(outcome)
 
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if current_user.is_authenticated:
-        return redirect(url_for('index'))
-    form = LoginForm()
-    if form.validate_on_submit():
-        user = get_user("")
-        if user is not None and user.check_password(form.password.data):
-            login_user(user, remember=form.remember_me.data)
-            next_page = request.args.get('next')
-            if not next_page or url_parse(next_page).netloc != '':
-                next_page = url_for('index')
-            return redirect(next_page)
-    return render_template('login_form.html', form=form)
-
-
-@app.route('/logout')
-def logout():
-    logout_user()
-    return redirect(url_for('index'))
-
-
+# @app.route('/login', methods=['GET', 'POST'])
+# def login():
+#     if current_user.is_authenticated:
+#         return redirect(url_for('index'))
+#     form = LoginForm()
+#     if form.validate_on_submit():
+#         user = User()
+#         if user is not None and user.check_password(form.password.data):
+#             login_user(user, remember=form.remember_me.data)
+#             next_page = request.args.get('next')
+#             if not next_page or url_parse(next_page).netloc != '':
+#                 next_page = url_for('index')
+#             return redirect(next_page)
+#     return render_template('login_form.html', form=form)
+#
+#
+# @app.route('/logout')
+# def logout():
+#     logout_user()
+#     return redirect(url_for('index'))
+#
+#
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000, debug=True)
