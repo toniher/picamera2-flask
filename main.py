@@ -17,7 +17,9 @@ from flask_login import LoginManager, UserMixin
 from flask_login import current_user, login_required
 from flask_wtf import FlaskForm
 from werkzeug.urls import url_parse
-#
+
+from forms import LoginForm
+
 # Code from: https://github.com/raspberrypi/picamera2/issues/366
 # Code from: https://github.com/EbenKouao/pi-camera-stream-flask
 
@@ -51,13 +53,6 @@ class Camera:
 
 class User(UserMixin):
     pass
-
-class LoginForm(FlaskForm):
-    username = StringField('Username', validators=[DataRequired()])
-    password = PasswordField('Password', validators=[DataRequired()])
-    remember_me = BooleanField('Submit')
-    submit = SubmitField('Login')
-
 
 # App Globals
 app = Flask(__name__, template_folder='templates')
@@ -187,28 +182,6 @@ def start():
         camera = open_camera()
     outcome = {'status': 'started'}
     return jsonify(outcome)
-
-@login_manager.user_loader
-def user_loader(username):
-  if username not in users:
-    return
-
-  user = User()
-  user.id = username
-  return user
-
-@login_manager.request_loader
-def request_loader(request):
-  username = request.form.get('username')
-  if username not in users:
-    return
-
-  user = User()
-  user.id = username
-
-  user.is_authenticated = request.form['pw'] == users[username]['pw']
-
-  return user
 
 
 @app.route('/login', methods=['GET', 'POST'])
