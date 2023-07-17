@@ -1,21 +1,19 @@
 #!/usr/bin/env python
 
-from picamera2 import Picamera2
-from picamera2.encoders import JpegEncoder
-from picamera2.outputs import FileOutput
-from libcamera import Transform
 import io
-from threading import Condition
-import time
 import os
-
-from flask import Flask, jsonify, redirect, render_template, request, Response, url_for
+import time
+from threading import Condition
 
 # Based on https://stackoverflow.com/questions/37275262/anonym-password-protect-pages-without-username-with-flask
 import flask_login
-from flask_login import LoginManager, UserMixin
-from flask_login import current_user, login_required
+from flask import Flask, Response, jsonify, redirect, render_template, request, url_for
+from flask_login import LoginManager, UserMixin, current_user, login_required
 from flask_wtf import FlaskForm
+from libcamera import Transform
+from picamera2 import Picamera2
+from picamera2.encoders import JpegEncoder
+from picamera2.outputs import FileOutput
 from werkzeug.urls import url_parse
 
 from forms import LoginForm
