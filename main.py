@@ -141,7 +141,7 @@ def request_loader(request):
   user = User()
   user.id = username
 
-  user.is_authenticated = request.form['pw'] == users[username]['pw']
+  user.is_authenticated = request.form['password'] == users[username]['pw']
 
   return user
 
