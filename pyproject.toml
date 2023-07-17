@@ -1,0 +1,20 @@
+[tool.ruff]
+ignore = [
+    "E501",
+    "F401",
+    "F403",
+    "W605",
+]
+line-length = 79
+select = [
+    "B",
+    "B9",
+    "C",
+    "E",
+    "F",
+    "W",
+]
+
+[tool.ruff.mccabe]
+max-complexity = 18
+

@@ -138,18 +138,19 @@ def request_loader(request):
   if username not in users:
     return
 
-  user = User()
-  user.id = username
-
   if request.form.get('password') != users[username]['pw']:
     return
 
+  user = User()
+  user.id = username
   return user
 
 
+@login_required
 @app.route('/index.html')
 def indexhtml():
     return redirect('/')
+
 
 @login_required
 @app.route('/')
