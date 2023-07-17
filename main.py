@@ -122,6 +122,30 @@ def captureImage(camera):
     return {'status': status}
 
 
+@login_manager.user_loader
+def user_loader(username):
+  if username not in users:
+    return
+
+  user = User()
+  user.id = username
+  return user
+
+
+@login_manager.request_loader
+def request_loader(request):
+  username = request.form.get('username')
+  if username not in users:
+    return
+
+  user = User()
+  user.id = username
+
+  user.is_authenticated = request.form['pw'] == users[username]['pw']
+
+  return user
+
+
 @app.route('/index.html')
 def indexhtml():
     return redirect('/')
