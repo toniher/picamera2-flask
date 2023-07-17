@@ -5,15 +5,19 @@ ignore = [
     "F403",
     "W605",
 ]
-line-length = 79
+# Same as black
+line-length = 88
 select = [
     "B",
     "B9",
     "C",
     "E",
     "F",
+    "I",
     "W",
 ]
+
+target-version = "py39"
 
 [tool.ruff.mccabe]
 max-complexity = 18
