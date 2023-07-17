@@ -150,7 +150,7 @@ def request_loader(request):
 def indexhtml():
     return redirect('/')
 
-
+@login_required
 @app.route('/')
 def index():
     return render_template('index.html')  # you can customze index.html here
