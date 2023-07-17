@@ -141,7 +141,8 @@ def request_loader(request):
   user = User()
   user.id = username
 
-  user.is_authenticated = request.form['password'] == users[username]['pw']
+  if request.form.get('password') != users[username]['pw']:
+    return
 
   return user
 
@@ -215,9 +216,7 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         username = form.username.data
-        if username not in users:
-            return
-        if users[username]['pw'] == form.password.data:
+        if username in users and users[username]['pw'] == form.password.data:
             user = User()
             user.id = username
             flask_login.login_user(user, remember=form.remember_me.data)
